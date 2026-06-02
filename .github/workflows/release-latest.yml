@@ -9,40 +9,78 @@ on:
     workflows: ["Build binaries"]
     types: [completed]
     branches: [master]
+  # Manual trigger for testing/backfilling against an existing build run
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Build binaries run id to publish (defaults to latest master build)"
+        required: false
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   publish-latest:
     runs-on: ubuntu-latest
-    # Only when the build actually succeeded (all platform jobs passed)
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # On the auto trigger, only run when the build actually succeeded
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Download installers from the build run
-        uses: actions/download-artifact@v7
-        with:
-          path: dist
-          merge-multiple: true
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve build run id and commit
+        id: src
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_RUN_ID: ${{ github.event.inputs.run_id }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
+          EVENT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          RUN_ID="${INPUT_RUN_ID:-$EVENT_RUN_ID}"
+          if [ -z "$RUN_ID" ]; then
+            # Manual dispatch with no id: use the most recent successful master build
+            RUN_ID=$(gh run list --workflow="Build binaries" --branch master --status success \
+              --limit 1 --json databaseId --jq '.[0].databaseId')
+          fi
+          SHA="${EVENT_SHA:-$(gh run view "$RUN_ID" --json headSha --jq .headSha)}"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Publishing artifacts from build run $RUN_ID (commit $SHA)"
 
-      - name: List downloaded files
-        run: ls -lh dist || (echo 'No artifacts found' && exit 1)
+      - name: Download installers from the build run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ steps.src.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          ok=
+          for attempt in 1 2 3; do
+            rm -rf _artifacts
+            if gh run download "$RUN_ID" --dir _artifacts; then ok=1; break; fi
+            echo "download attempt $attempt failed; retrying in 15s..."
+            sleep 15
+          done
+          [ -n "$ok" ] || { echo "::error::artifact download failed after 3 attempts"; exit 1; }
+          # Each artifact downloads into its own folder; flatten the installers out
+          find _artifacts -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.tar.gz' \) \
+            -exec mv -f {} dist/ \;
+          echo "Collected installers:"
+          ls -lh dist
+          [ -n "$(ls -A dist)" ] || { echo "::error::no installers found"; exit 1; }
 
       - name: Publish/refresh the "latest" prerelease
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          SHA: ${{ steps.src.outputs.sha }}
         run: |
           set -euo pipefail
           # Recreate the rolling release so the tag tracks the newest master commit
           gh release delete latest --cleanup-tag --yes 2>/dev/null || true
           gh release create latest dist/* \
-            --target "$HEAD_SHA" \
+            --target "$SHA" \
             --title "Latest build (master)" \
             --prerelease \
-            --notes "Automated, **unsigned** build from the latest \`master\` commit (\`${HEAD_SHA:0:7}\`).
+            --notes "Automated, **unsigned** build from the latest \`master\` commit (\`${SHA:0:7}\`).
 
           Includes the Timeline editor. On first launch:
           - **macOS:** right-click the app → Open → Open (bypasses Gatekeeper for unsigned apps).
