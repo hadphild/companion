@@ -2,7 +2,7 @@ name: Build binaries
 on: [push]
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   API_PRODUCT: companion
@@ -102,6 +102,19 @@ jobs:
           name: ${{ steps.filenames.outputs.targetname }}
           path: ${{ steps.filenames.outputs.sourcename }}
           retention-days: 1
+      # Fork-only: attach this installer to a rolling "latest" prerelease.
+      # Uploaded straight from the build job (artifact re-download is unreliable here).
+      - name: Add to "latest" prerelease
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          FILE: ${{ steps.filenames.outputs.sourcename }}
+        run: |
+          gh release create latest --target "$GITHUB_SHA" --title "Latest build (master)" --prerelease \
+            --notes "Automated, unsigned builds of the latest \`master\` commit (includes the Timeline editor). macOS: right-click the app → Open → Open. Windows: if SmartScreen warns, More info → Run anyway." \
+            2>/dev/null || true
+          gh release upload latest "$FILE" --clobber
       - name: Upload build (beta)
         id: upload-beta
         uses: bitfocus/actions/upload-and-notify-for-branch@main
@@ -203,6 +216,19 @@ jobs:
           name: ${{ steps.filenames.outputs.targetname }}
           path: ${{ steps.filenames.outputs.sourcename }}
           retention-days: 1
+      # Fork-only: attach this installer to a rolling "latest" prerelease.
+      # Uploaded straight from the build job (artifact re-download is unreliable here).
+      - name: Add to "latest" prerelease
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          FILE: ${{ steps.filenames.outputs.sourcename }}
+        run: |
+          gh release create latest --target "$GITHUB_SHA" --title "Latest build (master)" --prerelease \
+            --notes "Automated, unsigned builds of the latest \`master\` commit (includes the Timeline editor). macOS: right-click the app → Open → Open. Windows: if SmartScreen warns, More info → Run anyway." \
+            2>/dev/null || true
+          gh release upload latest "$FILE" --clobber
       - name: Upload build (beta)
         id: upload-beta
         uses: bitfocus/actions/upload-and-notify-for-branch@main
@@ -313,6 +339,19 @@ jobs:
           name: ${{ steps.filenames.outputs.targetname }}
           path: ${{ steps.filenames.outputs.sourcename }}
           retention-days: 1
+      # Fork-only: attach this installer to a rolling "latest" prerelease.
+      # Uploaded straight from the build job (artifact re-download is unreliable here).
+      - name: Add to "latest" prerelease
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          FILE: ${{ steps.filenames.outputs.sourcename }}
+        run: |
+          gh release create latest --target "$GITHUB_SHA" --title "Latest build (master)" --prerelease \
+            --notes "Automated, unsigned builds of the latest \`master\` commit (includes the Timeline editor). macOS: right-click the app → Open → Open. Windows: if SmartScreen warns, More info → Run anyway." \
+            2>/dev/null || true
+          gh release upload latest "$FILE" --clobber
       - name: Upload build (beta)
         uses: bitfocus/actions/upload-and-notify-for-branch@main
         if: ${{ github.repository_owner == 'bitfocus' && github.ref == 'refs/heads/main' }}
@@ -413,6 +452,19 @@ jobs:
           name: ${{ steps.filenames.outputs.targetname }}
           path: ${{ steps.filenames.outputs.sourcename }}
           retention-days: 1
+      # Fork-only: attach this installer to a rolling "latest" prerelease.
+      # Uploaded straight from the build job (artifact re-download is unreliable here).
+      - name: Add to "latest" prerelease
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          FILE: ${{ steps.filenames.outputs.sourcename }}
+        run: |
+          gh release create latest --target "$GITHUB_SHA" --title "Latest build (master)" --prerelease \
+            --notes "Automated, unsigned builds of the latest \`master\` commit (includes the Timeline editor). macOS: right-click the app → Open → Open. Windows: if SmartScreen warns, More info → Run anyway." \
+            2>/dev/null || true
+          gh release upload latest "$FILE" --clobber
       - name: Upload build (beta)
         uses: bitfocus/actions/upload-and-notify-for-branch@main
         if: ${{ github.repository_owner == 'bitfocus' && github.ref == 'refs/heads/main' }}
@@ -524,6 +576,19 @@ jobs:
           name: ${{ steps.filenames.outputs.targetname }}
           path: ${{ steps.filenames.outputs.sourcename }}
           retention-days: 1
+      # Fork-only: attach this installer to a rolling "latest" prerelease.
+      # Uploaded straight from the build job (artifact re-download is unreliable here).
+      - name: Add to "latest" prerelease
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          FILE: ${{ steps.filenames.outputs.sourcename }}
+        run: |
+          gh release create latest --target "$GITHUB_SHA" --title "Latest build (master)" --prerelease \
+            --notes "Automated, unsigned builds of the latest \`master\` commit (includes the Timeline editor). macOS: right-click the app → Open → Open. Windows: if SmartScreen warns, More info → Run anyway." \
+            2>/dev/null || true
+          gh release upload latest "$FILE" --clobber
       - name: Upload build (beta)
         uses: bitfocus/actions/upload-and-notify-for-branch@main
         if: ${{ github.repository_owner == 'bitfocus' && github.ref == 'refs/heads/main' }}
@@ -631,48 +696,3 @@ jobs:
           build-args: |
             linux_x64_url=${{ needs.linux-x64.outputs.upload-url }}
             linux_arm64_url=${{ needs.linux-arm64.outputs.upload-url }}
-
-  # Fork-only: publish a rolling "latest" prerelease of the unsigned installers.
-  # Runs in the same workflow as the build so artifacts download same-run (reliable).
-  publish-latest:
-    name: Publish latest prerelease
-    needs: [linux-x64, linux-arm64, osx-x64, osx-arm64, win32-x64]
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GH_REPO: ${{ github.repository }}
-    steps:
-      - name: Download installers (same run)
-        uses: actions/download-artifact@v7
-        with:
-          path: dist
-          merge-multiple: true
-
-      - name: List installers
-        run: ls -lh dist
-
-      - name: Publish/refresh the "latest" prerelease
-        env:
-          SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          gh release delete latest --cleanup-tag --yes 2>/dev/null || true
-          gh release create latest dist/*.dmg dist/*.exe dist/*.tar.gz \
-            --target "$SHA" \
-            --title "Latest build (master)" \
-            --prerelease \
-            --notes "Automated, **unsigned** build from the latest \`master\` commit (\`${SHA:0:7}\`).
-
-          Includes the Timeline editor. On first launch:
-          - **macOS:** right-click the app → Open → Open (bypasses Gatekeeper for unsigned apps).
-          - **Windows:** if SmartScreen warns, choose More info → Run anyway.
-
-          | Platform | File |
-          |---|---|
-          | Windows | \`companion-win64.exe\` |
-          | macOS (Apple Silicon) | \`companion-mac-arm64.dmg\` |
-          | macOS (Intel) | \`companion-mac-x64.dmg\` |
-          | Linux x64 / arm64 | \`companion-*.tar.gz\` |"
