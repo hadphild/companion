@@ -106,6 +106,7 @@ jobs:
       # Uploaded straight from the build job (artifact re-download is unreliable here).
       - name: Add to "latest" prerelease
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -220,6 +221,7 @@ jobs:
       # Uploaded straight from the build job (artifact re-download is unreliable here).
       - name: Add to "latest" prerelease
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -343,6 +345,7 @@ jobs:
       # Uploaded straight from the build job (artifact re-download is unreliable here).
       - name: Add to "latest" prerelease
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -456,6 +459,7 @@ jobs:
       # Uploaded straight from the build job (artifact re-download is unreliable here).
       - name: Add to "latest" prerelease
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -580,6 +584,7 @@ jobs:
       # Uploaded straight from the build job (artifact re-download is unreliable here).
       - name: Add to "latest" prerelease
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository_owner == 'hadphild' }}
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
