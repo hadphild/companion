@@ -1,0 +1,56 @@
+name: Publish latest build
+
+# Republishes the installers produced by the "Build binaries" workflow to a
+# rolling "latest" prerelease, so there are always downloadable Mac/PC/Linux
+# builds on the Releases page. Runs after every successful master build and
+# reuses those artifacts (no second build).
+on:
+  workflow_run:
+    workflows: ["Build binaries"]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  publish-latest:
+    runs-on: ubuntu-latest
+    # Only when the build actually succeeded (all platform jobs passed)
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Download installers from the build run
+        uses: actions/download-artifact@v7
+        with:
+          path: dist
+          merge-multiple: true
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List downloaded files
+        run: ls -lh dist || (echo 'No artifacts found' && exit 1)
+
+      - name: Publish/refresh the "latest" prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          # Recreate the rolling release so the tag tracks the newest master commit
+          gh release delete latest --cleanup-tag --yes 2>/dev/null || true
+          gh release create latest dist/* \
+            --target "$HEAD_SHA" \
+            --title "Latest build (master)" \
+            --prerelease \
+            --notes "Automated, **unsigned** build from the latest \`master\` commit (\`${HEAD_SHA:0:7}\`).
+
+          Includes the Timeline editor. On first launch:
+          - **macOS:** right-click the app → Open → Open (bypasses Gatekeeper for unsigned apps).
+          - **Windows:** if SmartScreen warns, choose More info → Run anyway.
+
+          | Platform | File |
+          |---|---|
+          | Windows | \`companion-win64.exe\` |
+          | macOS (Apple Silicon) | \`companion-mac-arm64.dmg\` |
+          | macOS (Intel) | \`companion-mac-x64.dmg\` |
+          | Linux x64 / arm64 | \`companion-*.tar.gz\` |"
