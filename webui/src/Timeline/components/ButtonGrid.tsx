@@ -47,21 +47,20 @@ export const TimelineButtonGrid = observer(function TimelineButtonGrid({
 	const cols: number[] = []
 	for (let c = gridSize.minColumn; c <= gridSize.maxColumn; c++) cols.push(c)
 
+	// A single scrollable column of all the current page's buttons (row-major order)
 	return (
-		<div className="ct-button-grid">
-			{rows.map((row) => (
-				<div key={row} className="ct-button-grid-row">
-					{cols.map((column) => {
-						const location: ControlLocation = { pageNumber, row, column }
-						const selected =
-							!!selectedLocation &&
-							selectedLocation.pageNumber === pageNumber &&
-							selectedLocation.row === row &&
-							selectedLocation.column === column
-						return <Cell key={column} location={location} selected={selected} onSelect={onSelect} />
-					})}
-				</div>
-			))}
+		<div className="ct-button-strip">
+			{rows.flatMap((row) =>
+				cols.map((column) => {
+					const location: ControlLocation = { pageNumber, row, column }
+					const selected =
+						!!selectedLocation &&
+						selectedLocation.pageNumber === pageNumber &&
+						selectedLocation.row === row &&
+						selectedLocation.column === column
+					return <Cell key={`${row}-${column}`} location={location} selected={selected} onSelect={onSelect} />
+				})
+			)}
 		</div>
 	)
 })

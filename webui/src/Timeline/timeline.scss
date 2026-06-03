@@ -750,12 +750,47 @@
 
 	/* Sidebar */
 	.sidebar-panel {
-		width: 240px;
+		width: 104px;
 		flex-shrink: 0;
 		border-right: 1px solid var(--border);
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
+	}
+
+	/* Single vertical, scrollable strip of the current page's buttons */
+	.ct-button-strip {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 4px;
+	}
+
+	.ct-page-bar {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 6px 4px;
+		border-bottom: 1px solid var(--border);
+		flex-shrink: 0;
+	}
+	.ct-page-bar .step-tab {
+		min-width: 22px;
+		padding: 2px 6px;
+	}
+	.ct-page-name {
+		flex: 1;
+		min-width: 0;
+		text-align: center;
+		font-size: 11px;
+		color: var(--text2);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.sidebar-header {
